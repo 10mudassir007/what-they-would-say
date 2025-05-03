@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Character Q&A App</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #1e1e1e;
+            padding: 20px;
+            transition: transform 0.3s ease;
+            transform: translateX(0);
+            position: relative;
+            z-index: 2;
+        }
+
+        .sidebar.closed {
+            transform: translateX(-100%);
+        }
+
+        .toggle-sidebar {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            z-index: 3;
+        }
+
+        .sidebar h2 {
+            margin-top: 50px;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .sidebar label {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .sidebar select,
+        .sidebar input[type="text"],
+        .sidebar input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            background-color: #2b2b2b;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 4px;
+        }
+
+        .sidebar .range-value {
+            text-align: right;
+            font-size: 12px;
+            color: #ccc;
+            margin-top: -12px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: margin-left 0.3s ease;
+            margin-left: 300px;
+        }
+
+        .content.sidebar-closed {
+            margin-left: 0;
+        }
+
+        .response {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .query-box {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #1c1c1c;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            transition: width 0.3s ease;
+            transition: margin-left 0.3s ease;
+        }
+
+        .query-box input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background-color: #2a2a2a;
+            color: white;
+            transition: width 0.3s ease;
+        }
+
+        .query-box button {
+            margin-left: 10px;
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .query-box button:hover {
+            background-color: #357bd8;
+        }
+
+        /* Dynamically adjust the width of the query box */
+        .query-box.open-sidebar input[type="text"] {
+            width: calc(100% - 300px);
+        }
+
+        .query-box.closed-sidebar input[type="text"] {
+            width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+
+    <div class="sidebar" id="sidebar">
+        <h2>Settings</h2>
+
+        <label for="voice">Voice Name:</label>
+        <select id="voice">
+            <option value="nPczCjzI2devNBz1zQrb">Adam</option>
+            <option value="JBFqnCBsd6RMkjVDRZzb">Antoni</option>
+            <option value="EXAVITQu4vr4xnSDxMaL">Rachel</option>
+        </select>
+
+        <label for="model">Model:</label>
+        <select id="model">
+            <option value="meta-llama/llama-4-maverick-17b-128e-instruct">LLaMA 4 Maverick</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+        </select>
+
+        <label for="character">Character Name:</label>
+        <input type="text" id="character" placeholder="e.g. Saddam Hussain" />
+
+        <label for="temp">Temperature:</label>
+        <input type="range" id="temp" min="0" max="1" step="0.01" value="0.5" />
+        <div class="range-value" id="tempValue">0.5</div>
+    </div>
+
+    <div class="content" id="content">
+        <div class="response" id="response">
+            <p><em>Your responses will appear here.</em></p>
+        </div>
+        <div class="query-box" id="queryBox">
+            <input type="text" id="queryInput" placeholder="Enter your question here..." />
+            <button onclick="submitQuery()">Submit</button>
+        </div>
+    </div>
+
+    <script>
+        const sidebar = document.getElementById("sidebar");
+        const content = document.getElementById("content");
+        const queryBox = document.getElementById("queryBox");
+
+        function toggleSidebar() {
+            sidebar.classList.toggle("closed");
+            content.classList.toggle("sidebar-closed");
+            queryBox.classList.toggle("open-sidebar");
+            queryBox.classList.toggle("closed-sidebar");
+        }
+
+        const tempSlider = document.getElementById("temp");
+        const tempDisplay = document.getElementById("tempValue");
+
+        tempSlider.addEventListener("input", () => {
+            tempDisplay.textContent = tempSlider.value;
+        });
+
+        function submitQuery() {
+            const query = document.getElementById("queryInput").value;
+            const responseBox = document.getElementById("response");
+            if (!query.trim()) return;
+
+            responseBox.innerHTML = "<p><em>Generating response...</em></p>";
+
+            // Simulate streamed response (replace with actual API call)
+            let simulated = "This is a simulated streamed response for: " + query;
+            responseBox.innerHTML = "";
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < simulated.length) {
+                    responseBox.innerHTML += simulated[i++];
+                    responseBox.scrollTop = responseBox.scrollHeight;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 30);
+        }
+    </script>
+</body>
+</html>
