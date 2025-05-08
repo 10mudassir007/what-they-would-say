@@ -16,9 +16,9 @@ from dotenv import load_dotenv
 import streamlit as st
 load_dotenv()
 
-os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY")
-os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY")
-os.environ["ELEVEN_API_KEY"] = os.getenv("ELEVEN_API_KEY")
+os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+os.environ["TAVILY_API_KEY"] = st.secrets["TAVILY_API_KEY"]
+os.environ["ELEVEN_API_KEY"] = st.secrets["ELEVEN_API_KEY"]
 
 tool = TavilySearch(
     max_results=10,
