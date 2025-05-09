@@ -14,11 +14,6 @@ st.set_page_config(
     page_icon="💬",  # Can be an emoji or a local file path to an image
     layout="wide",  # 'centered' (default) or 'wide'
     initial_sidebar_state="expanded",  # 'auto', 'expanded', or 'collapsed'
-    menu_items={
-        'LinkedIN': 'https://www.linkedin.com/in/mudassir-junejo/',
-        'GitHub': 'https://github.com/10mudassir007',
-        'About': "Simulate how iconic figures would answer your questions using real quotes, web context, and AI-generated voice. Powered by Groq, LangChain, Tavily, and ElevenLabs."
-    }
 )
 
 os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
