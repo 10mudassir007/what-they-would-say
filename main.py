@@ -85,21 +85,26 @@ def generator(string: str):
       yield i + ""
       time.sleep(0.01)
 
-def play_audio(text:str):
+def play_audio(text: str):
     try:
         client = ElevenLabs(
-        api_key="sk_e147b7c1519c83741784270e0ae776ae91d472480a9f3207",
+            api_key=st.secrets["ELEVEN_API_KEY"],  # Use the API key from the environment variable
         )
 
         audio = client.text_to_speech.convert(
             text=text,
-            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            voice_id="JBFqnCBsd6RMkjVDRZzb",  # Example voice ID, modify as needed
             model_id="eleven_multilingual_v2",
             output_format="mp3_44100_128",
         )
-        play(audio)
-    except:
-        st.sidebar.error("Eleven Labs API Error")
+
+        # Convert the audio to a byte stream
+        audio_data = audio.content
+        return audio_data
+    except Exception as e:
+        st.sidebar.error(f"Error: {str(e)}")
+        return None
+
 
 st.title("What they would say 💬")
 st.sidebar.title("Settings")
@@ -147,6 +152,11 @@ if query:
         if st.session_state.history:
             last_response = st.session_state.history[-1]["Response"]
             with st.spinner("Generating audio..."):
-                play_audio(last_response)
+                audio_data = play_audio(last_response)
+                
+                if audio_data:
+                    st.audio(audio_data, format="audio/mp3")
+                else:
+                    st.sidebar.warning("Failed to generate audio.")
         else:
             st.sidebar.warning("No response available to play.")
