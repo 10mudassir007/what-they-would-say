@@ -109,7 +109,7 @@ def play_audio(text:str):
         return None
 
 
-st.title("What they would say 💬")
+st.header("What they would say 💬")
 st.sidebar.title("Settings")
 st.sidebar.markdown("---")
 language = st.sidebar.selectbox("Select Language 🗣️",["English","Urdu"])
