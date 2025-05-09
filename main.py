@@ -5,20 +5,12 @@ from langchain_groq import ChatGroq
 from groq import InternalServerError,APIConnectionError
 import time
 import os
-import uuid
 from elevenlabs.client import ElevenLabs
-from elevenlabs import VoiceSettings
-from pydub import AudioSegment
-from pydub.playback import play
 from io import BytesIO
-
-from dotenv import load_dotenv
 import streamlit as st
-load_dotenv()
 
 os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 os.environ["TAVILY_API_KEY"] = st.secrets["TAVILY_API_KEY"]
-os.environ["ELEVEN_API_KEY"] = st.secrets["ELEVEN_API_KEY"]
 
 tool = TavilySearch(
     max_results=10,
@@ -77,37 +69,42 @@ def get_response(query:str, character:str,model:str = "llama-3.1-8b-instant", te
     try:
         return chain.invoke({"query":query,"statements":statements,"context":context,"language":lang,"history":history}).content
     except InternalServerError:
-       return "Server error, Please select a different model"
+       return "Groq Server error, Please select a different llm"
     except APIConnectionError:
-        return "Server error, Please select a different model"
+        return "Groq Server error, Please select a different llm"
 def generator(string: str):
    for i in string:
       yield i + ""
       time.sleep(0.01)
 
-def play_audio(text: str):
+def play_audio(text:str):
     try:
         client = ElevenLabs(
-            api_key=st.secrets["ELEVEN_API_KEY"],  # Use the API key from the environment variable
-        )
+                api_key=st.secrets['ELEVEN_API_KEY']
+            )
 
         audio = client.text_to_speech.convert(
-            text=text,
-            voice_id="JBFqnCBsd6RMkjVDRZzb",  # Example voice ID, modify as needed
-            model_id="eleven_multilingual_v2",
-            output_format="mp3_44100_128",
-        )
+                text=text,
+                voice_id="JBFqnCBsd6RMkjVDRZzb",  # Example voice ID, modify as needed
+                model_id="eleven_flash_v2_5",
+                output_format="mp3_44100_128",
+            )
 
-        # Convert the audio to a byte stream
-        audio_data = audio.content
-        return audio_data
-    except Exception as e:
-        st.sidebar.error(f"Error: {str(e)}")
+        audio_bytes = BytesIO()
+        for chunk in audio:
+            audio_bytes.write(chunk)
+
+    # Go to start of BytesIO buffer
+        audio_bytes.seek(0)
+        return audio_bytes
+    except:
+        st.error("Eleven Labs API Error!")
         return None
 
 
 st.title("What they would say 💬")
 st.sidebar.title("Settings")
+st.sidebar.markdown("---")
 language = st.sidebar.selectbox("Select Language 🗣️",["English","Urdu"])
 
 list_models = ["llama-3.1-8b-instant","llama-3.3-70b-versatile","meta-llama/llama-4-scout-17b-16e-instruct","meta-llama/llama-4-maverick-17b-128e-instruct","deepseek-r1-distill-llama-70b","qwen-qwq-32b","mistral-saba-24b","gemma2-9b-it"]
@@ -121,17 +118,34 @@ temp = st.sidebar.slider(label="Temperature 🌡️",min_value=0.,
     value=0.,  
     step=0.01)
 clear_history = st.sidebar.button("Clear History 📜")
-
+play_audio_btn = st.sidebar.button("🔊 Play Last Response")
 if 'history' not in st.session_state or clear_history:
     st.session_state.history = []
-
+    st.session_state.audio_bytes = None
 if len(st.session_state.history) > 10:
     st.session_state.history = st.session_state.history[1:]
 
+
+st.markdown(f"#### Selcted Character: {character} 🎭")
 st.markdown("---")
+
+
+
+
+
+# Generate audio if button clicked
+if play_audio_btn and st.session_state.history:
+    last_response = st.session_state.history[-1]["Response"]
+    with st.spinner("Generating audio..."):
+        st.session_state.audio_bytes = play_audio(last_response)
+elif play_audio_btn:
+    st.sidebar.warning("No response available to play.")
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("Powered by LangChain\nGroq\nElevenLabs")
-st.markdown(f"#### Selcted Character: {character} 🎭")
+# if 'audio_bytes' not in st.session_state:
+#     st.session_state.audio_bytes = None
+
     
 for i in st.session_state.history[-10:]:
         st.chat_message('user').write(i['Query'])
@@ -139,7 +153,6 @@ for i in st.session_state.history[-10:]:
 query = st.chat_input("Ask me ❓")
 if query:
     st.chat_message('user').write(query)
-    #history.append(f"Query : {query}\n")
     history = "\n".join(
         [f"User: {h['Query']}\n{character.title()}: {h['Response']}" for h in st.session_state.history[-10:]]
     )
@@ -147,16 +160,19 @@ if query:
     st.session_state.history.append({"Query":query,"Response":response})
     
     st.chat_message('assistant').write_stream(generator(response))
+    # If audio was generated, play it
+if st.session_state.audio_bytes:
+        st.audio(st.session_state.audio_bytes, format="audio/mp3")
 
-    if st.sidebar.button("🔊 Play Last Response"):
-        if st.session_state.history:
-            last_response = st.session_state.history[-1]["Response"]
-            with st.spinner("Generating audio..."):
-                audio_data = play_audio(last_response)
-                
-                if audio_data:
-                    st.audio(audio_data, format="audio/mp3")
-                else:
-                    st.sidebar.warning("Failed to generate audio.")
-        else:
-            st.sidebar.warning("No response available to play.")
+    # if st.sidebar.button("🔊 Play Last Response"):
+    #     if st.session_state.history:
+    #         last_response = st.session_state.history[-1]["Response"]
+    #         with st.spinner("Generating audio..."):
+    #             audio_bytes = play_audio(last_response)
+
+    #         if audio_bytes:
+    #             st.audio(audio_bytes, format="audio/mp3")
+    #         else:
+    #             st.error("Failed to generate audio.")
+    #     else:
+    #         st.sidebar.warning("No response available to play.")
