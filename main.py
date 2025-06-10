@@ -9,6 +9,13 @@ from elevenlabs.client import ElevenLabs
 from io import BytesIO
 import streamlit as st
 
+st.set_page_config(
+    page_title="What they would say",
+    page_icon="💬",  # Can be an emoji or a local file path to an image
+    layout="wide",  # 'centered' (default) or 'wide'
+    initial_sidebar_state="expanded",  # 'auto', 'expanded', or 'collapsed'
+)
+
 os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 os.environ["TAVILY_API_KEY"] = st.secrets["TAVILY_API_KEY"]
 
@@ -102,7 +109,7 @@ def play_audio(text:str):
         return None
 
 
-st.title("What they would say 💬")
+st.header("What they would say 💬")
 st.sidebar.title("Settings")
 st.sidebar.markdown("---")
 language = st.sidebar.selectbox("Select Language 🗣️",["English","Urdu"])
